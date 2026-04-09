@@ -97,7 +97,21 @@
   .form-success .sub { font-size: 0.82rem; color: #8a8a9a; }
   .form-error { display: none; margin-bottom: 0.75rem; padding: 0.75rem 1rem; background: rgba(224,62,62,0.12); border: 1px solid rgba(224,62,62,0.35); border-radius: 3px; font-size: 0.85rem; color: #f0a0a0; line-height: 1.45; }
   .form-error.visible { display: block; animation: fadeUp 0.3s ease-out; }
-  select.form-input { cursor: pointer; }
+  select.form-input {
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background-image:
+      linear-gradient(45deg, transparent 50%, rgba(232,230,225,0.75) 50%),
+      linear-gradient(135deg, rgba(232,230,225,0.75) 50%, transparent 50%);
+    background-position:
+      calc(100% - 18px) 50%,
+      calc(100% - 12px) 50%;
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 2.25rem;
+  }
+  select.form-input.is-placeholder { color: rgba(138,138,154,0.6); }
   .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
   .submit-btn:disabled:hover { background: var(--stamp); transform: none; }
 
@@ -166,8 +180,8 @@
           <option value="">Server size (optional)</option>
           <option value="Under 100">Under 100</option>
           <option value="100–500">100–500</option>
-          <option value="500–1,000">500–1,000</option>
-          <option value="1,000+">1,000+</option>
+          <option value="500–5,000">500–5,000</option>
+          <option value="5,000+">5,000+</option>
         </select>
       </div>
       <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">PUT ME ON THE LIST</button>
@@ -186,7 +200,7 @@
     <div class="how-step"><span class="how-num">04</span><span class="how-text">Build your reputation over time. Be the person who <strong>always called it</strong> — or the one who's always wrong. Either way, there's a receipt.</span></div>
   </div>
 
-  <footer class="footer"><div class="footer-line">COMING SOON TO DISCORD · 2025</div></footer>
+  <footer class="footer"><div class="footer-line">COMING SOON TO DISCORD · 2026</div></footer>
 </div>
 
 <script>
@@ -207,12 +221,19 @@
     el.classList.add('visible');
   }
 
+  function syncServerSizePlaceholder() {
+    const sel = document.getElementById('serverSizeSelect');
+    if (!sel) return;
+    sel.classList.toggle('is-placeholder', !sel.value);
+  }
+
   function setRole(role) {
     currentRole = role;
     document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.role === role));
     const showServer = role === 'owner';
     document.getElementById('serverField').style.display = showServer ? 'block' : 'none';
     document.getElementById('serverSizeField').style.display = showServer ? 'block' : 'none';
+    syncServerSizePlaceholder();
     hideFormError();
   }
 
@@ -280,6 +301,9 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && document.activeElement.classList.contains('form-input')) submitForm();
   });
+
+  document.getElementById('serverSizeSelect')?.addEventListener('change', syncServerSizePlaceholder);
+  syncServerSizePlaceholder();
 </script>
 </body>
 </html>
