@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Receipts — Bold claims. Real consequences.</title>
+<meta name="description" content="The prediction market for your group chat. Turn opinions into receipts. Coming soon to Discord."/>
+<meta property="og:title" content="Receipts — Bold claims. Real consequences."/>
+<meta property="og:description" content="The prediction market for your group chat. Coming soon to Discord."/>
+<meta property="og:type" content="website"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@800&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0c10;
+    --surface: #11141b;
+    --rule: rgba(255,255,255,0.06);
+    --paper: #e8e6e1;
+    --ghost: #5a5a66;
+    --stamp: #e8a020;
+    --green: #2ecc71;
+    --red: #e03e3e;
+  }
+  body {
+    background: var(--bg);
+    color: var(--paper);
+    font-family: 'Courier New', Courier, monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 256px 256px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .page { position: relative; z-index: 1; }
+
+  .header { text-align: center; padding: 4rem 1.5rem 0; }
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2.8rem, 8vw, 4.5rem);
+    letter-spacing: -0.02em;
+    color: var(--paper);
+    line-height: 1.05;
+    margin-bottom: 0.6rem;
+    animation: fadeDown 0.6s ease-out;
+  }
+  .header-sub {
+    font-size: 1rem;
+    color: #8a8a9a;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    animation: fadeDown 0.6s ease-out 0.12s both;
+  }
+
+  .receipt-wrap { max-width: 520px; margin: 3rem auto 0; padding: 0 1.5rem; animation: fadeUp 0.7s ease-out 0.3s both; }
+  .receipt { background: var(--surface); border: 1px solid var(--rule); border-radius: 2px; position: relative; overflow: hidden; }
+  .receipt::after { content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 30px; background: linear-gradient(to bottom, transparent, var(--surface)); pointer-events: none; }
+  .receipt-accent { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--stamp); }
+  .receipt-body { padding: 1.5rem 1.5rem 1.5rem 2rem; }
+  .receipt-header { font-size: 1.05rem; font-weight: 700; color: var(--paper); margin-bottom: 0.25rem; }
+  .divider { color: var(--ghost); font-size: 0.85rem; user-select: none; margin: 0.6rem 0; opacity: 0.5; }
+  .receipt-field { display: flex; gap: 1rem; font-size: 0.9rem; line-height: 1.7; color: #8a8a9a; }
+  .receipt-field .label { min-width: 76px; flex-shrink: 0; }
+  .receipt-field .value { color: var(--paper); }
+  .receipt-status { font-size: 0.9rem; font-weight: 700; color: var(--stamp); letter-spacing: 0.06em; }
+  .receipt-footer { font-size: 0.78rem; color: #8a8a9a; margin-top: 0.75rem; letter-spacing: 0.02em; }
+
+  .pitch { text-align: center; max-width: 480px; margin: 3rem auto 0; padding: 0 1.5rem; animation: fadeUp 0.7s ease-out 0.45s both; }
+  .pitch p { font-size: 1.05rem; line-height: 1.75; color: #94a3b8; }
+  .pitch strong { color: var(--paper); }
+
+  .cta-section { max-width: 520px; margin: 3rem auto 0; padding: 0 1.5rem; animation: fadeUp 0.7s ease-out 0.6s both; }
+  .cta-label { text-align: center; font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase; color: #8a8a9a; margin-bottom: 1.25rem; }
+  .toggle-row { display: flex; background: rgba(255,255,255,0.03); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; margin-bottom: 1.25rem; }
+  .toggle-btn { flex: 1; padding: 0.85rem 0.5rem; background: none; border: none; font-family: 'Courier New', Courier, monospace; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.06em; color: #8a8a9a; cursor: pointer; transition: all 0.2s; text-transform: uppercase; }
+  .toggle-btn.active { background: rgba(232,160,32,0.1); color: var(--stamp); }
+  .toggle-btn:not(.active):hover { background: rgba(255,255,255,0.03); color: var(--paper); }
+  .form-group { margin-bottom: 0.75rem; }
+  .form-input { width: 100%; padding: 0.9rem 1rem; background: rgba(255,255,255,0.03); border: 1px solid var(--rule); border-radius: 3px; font-family: 'Courier New', Courier, monospace; font-size: 0.92rem; color: var(--paper); outline: none; transition: border-color 0.2s; }
+  .form-input::placeholder { color: #8a8a9a; opacity: 0.6; }
+  .form-input:focus { border-color: var(--stamp); }
+  .submit-btn { width: 100%; padding: 0.9rem; background: var(--stamp); border: none; border-radius: 3px; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; font-weight: 700; letter-spacing: 0.08em; color: var(--bg); cursor: pointer; text-transform: uppercase; transition: all 0.15s; }
+  .submit-btn:hover { background: #d4911c; transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+  .form-success { display: none; text-align: center; padding: 1.5rem 1rem; }
+  .form-success.visible { display: block; animation: fadeUp 0.4s ease-out; }
+  .form-success .msg { font-size: 0.92rem; color: var(--green); font-weight: 700; margin-bottom: 0.25rem; }
+  .form-success .sub { font-size: 0.82rem; color: #8a8a9a; }
+
+  .how-section { max-width: 520px; margin: 3.5rem auto 0; padding: 0 1.5rem; animation: fadeUp 0.7s ease-out 0.75s both; }
+  .how-label { font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase; color: #8a8a9a; margin-bottom: 1.25rem; text-align: center; }
+  .how-step { display: flex; gap: 1rem; align-items: flex-start; padding: 0.85rem 0; border-bottom: 1px solid var(--rule); }
+  .how-step:last-child { border-bottom: none; }
+  .how-num { font-size: 0.82rem; font-weight: 700; color: var(--stamp); min-width: 20px; padding-top: 1px; }
+  .how-text { font-size: 0.95rem; line-height: 1.65; color: #94a3b8; }
+  .how-text strong { color: var(--paper); }
+
+  .footer { text-align: center; padding: 4rem 1.5rem 2.5rem; animation: fadeUp 0.7s ease-out 0.9s both; }
+  .footer-line { font-size: 0.78rem; color: #8a8a9a; letter-spacing: 0.06em; opacity: 0.5; }
+
+  @keyframes fadeDown { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @media (max-width: 480px) { .header { padding-top: 3rem; } .receipt-body { padding: 1.25rem 1rem 1.25rem 1.5rem; } .receipt-field .label { min-width: 60px; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="header">
+    <h1 class="header-title">RECEIPTS</h1>
+    <p class="header-sub">Bold claims. Real consequences.</p>
+  </header>
+
+  <div class="receipt-wrap">
+    <div class="receipt">
+      <div class="receipt-accent"></div>
+      <div class="receipt-body">
+        <div class="receipt-header">📋 RECEIPT #0001</div>
+        <div class="divider">━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+        <div class="receipt-field"><span class="label">CLAIM</span><span class="value">Your group chat is full<br/>of unverified hot takes</span></div>
+        <div class="receipt-field"><span class="label">BY</span><span class="value">Everyone</span></div>
+        <div class="receipt-field"><span class="label">ISSUED</span><span class="value">Receipts Bot</span></div>
+        <div class="receipt-field"><span class="label">STAKE</span><span class="value">Your reputation</span></div>
+        <div class="divider">━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+        <div class="receipt-status">STATUS  ⏳ PENDING</div>
+        <div class="divider">━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+        <div class="receipt-footer">Receipt issued. Your fate is officially on record.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pitch">
+    <p>
+      <strong>Receipts</strong> is a prediction market for your group chat.
+      Someone makes a bold claim — you put it on the record.
+      Friends bet coins. The truth comes out. Reputations update.
+      <strong>No real money. Just bragging rights and cold, hard receipts.</strong>
+    </p>
+  </div>
+
+  <div class="cta-section">
+    <div class="cta-label">▸ GET EARLY ACCESS</div>
+    <div class="toggle-row">
+      <button class="toggle-btn active" data-role="owner" onclick="setRole('owner')">I RUN A SERVER</button>
+      <button class="toggle-btn" data-role="player" onclick="setRole('player')">I WANT TO PLAY</button>
+    </div>
+    <div id="formArea">
+      <div class="form-group"><input type="email" id="emailInput" class="form-input" placeholder="your@email.com" autocomplete="email" required/></div>
+      <div class="form-group" id="serverField"><input type="text" id="serverInput" class="form-input" placeholder="Discord server name (optional)"/></div>
+      <button class="submit-btn" onclick="submitForm()">PUT ME ON THE LIST</button>
+    </div>
+    <div id="formSuccess" class="form-success">
+      <div class="msg">RECEIPT ISSUED.</div>
+      <div class="sub">You're on the list. We'll be in touch.</div>
+    </div>
+  </div>
+
+  <div class="how-section">
+    <div class="how-label">▸ HOW IT WORKS</div>
+    <div class="how-step"><span class="how-num">01</span><span class="how-text">Someone says something bold in chat. Another person calls <strong>/receipt</strong> — the claim is now on the record.</span></div>
+    <div class="how-step"><span class="how-num">02</span><span class="how-text">Friends bet virtual coins on whether the claim comes true. <strong>Called it</strong> or <strong>Cap</strong> — pick a side.</span></div>
+    <div class="how-step"><span class="how-num">03</span><span class="how-text">When the truth comes out, the receipt settles. Winners get paid, losers get exposed, and <strong>the leaderboard updates.</strong></span></div>
+    <div class="how-step"><span class="how-num">04</span><span class="how-text">Build your reputation over time. Be the person who <strong>always called it</strong> — or the one who's always wrong. Either way, there's a receipt.</span></div>
+  </div>
+
+  <footer class="footer"><div class="footer-line">COMING SOON TO DISCORD · 2025</div></footer>
+</div>
+
+<script>
+  let currentRole = 'owner';
+  function setRole(role) {
+    currentRole = role;
+    document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.role === role));
+    document.getElementById('serverField').style.display = role === 'owner' ? 'block' : 'none';
+  }
+  function submitForm() {
+    const email = document.getElementById('emailInput').value.trim();
+    if (!email || !email.includes('@')) {
+      document.getElementById('emailInput').style.borderColor = 'var(--red)';
+      setTimeout(() => { document.getElementById('emailInput').style.borderColor = ''; }, 1500);
+      return;
+    }
+    const data = {
+      email,
+      role: currentRole,
+      server_name: currentRole === 'owner' ? document.getElementById('serverInput').value.trim() : null,
+      submitted_at: new Date().toISOString()
+    };
+    // TODO: Wire up backend (Supabase, Google Sheets, etc.)
+    console.log('Waitlist signup:', data);
+    document.getElementById('formArea').style.display = 'none';
+    document.getElementById('formSuccess').classList.add('visible');
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && document.activeElement.classList.contains('form-input')) submitForm();
+  });
+</script>
+</body>
+</html>
