@@ -95,6 +95,11 @@
   .form-success.visible { display: block; animation: fadeUp 0.4s ease-out; }
   .form-success .msg { font-size: 0.92rem; color: var(--green); font-weight: 700; margin-bottom: 0.25rem; }
   .form-success .sub { font-size: 0.82rem; color: #8a8a9a; }
+  .form-error { display: none; margin-bottom: 0.75rem; padding: 0.75rem 1rem; background: rgba(224,62,62,0.12); border: 1px solid rgba(224,62,62,0.35); border-radius: 3px; font-size: 0.85rem; color: #f0a0a0; line-height: 1.45; }
+  .form-error.visible { display: block; animation: fadeUp 0.3s ease-out; }
+  select.form-input { cursor: pointer; }
+  .submit-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+  .submit-btn:disabled:hover { background: var(--stamp); transform: none; }
 
   .how-section { max-width: 520px; margin: 3.5rem auto 0; padding: 0 1.5rem; animation: fadeUp 0.7s ease-out 0.75s both; }
   .how-label { font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase; color: #8a8a9a; margin-bottom: 1.25rem; text-align: center; }
@@ -153,9 +158,19 @@
       <button class="toggle-btn" data-role="player" onclick="setRole('player')">I WANT TO PLAY</button>
     </div>
     <div id="formArea">
+      <div id="formError" class="form-error" role="alert"></div>
       <div class="form-group"><input type="email" id="emailInput" class="form-input" placeholder="your@email.com" autocomplete="email" required/></div>
       <div class="form-group" id="serverField"><input type="text" id="serverInput" class="form-input" placeholder="Discord server name (optional)"/></div>
-      <button class="submit-btn" onclick="submitForm()">PUT ME ON THE LIST</button>
+      <div class="form-group" id="serverSizeField">
+        <select id="serverSizeSelect" class="form-input" aria-label="Approximate server size">
+          <option value="">Server size (optional)</option>
+          <option value="Under 100">Under 100</option>
+          <option value="100–500">100–500</option>
+          <option value="500–1,000">500–1,000</option>
+          <option value="1,000+">1,000+</option>
+        </select>
+      </div>
+      <button type="button" class="submit-btn" id="submitBtn" onclick="submitForm()">PUT ME ON THE LIST</button>
     </div>
     <div id="formSuccess" class="form-success">
       <div class="msg">RECEIPT ISSUED.</div>
@@ -175,30 +190,93 @@
 </div>
 
 <script>
+  const SUPABASE_URL = 'https://nwgqbqnakoblysjulsnr.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53Z3FicW5ha29ibHlzanVsc25yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NDUwNzgsImV4cCI6MjA5MTMyMTA3OH0.Eqt_7TNUM3kulswvBbiX9-FsfJEJ0yC0LBPqnjVbE9E';
+
   let currentRole = 'owner';
+
+  function hideFormError() {
+    const el = document.getElementById('formError');
+    el.classList.remove('visible');
+    el.textContent = '';
+  }
+
+  function showFormError(message) {
+    const el = document.getElementById('formError');
+    el.textContent = message;
+    el.classList.add('visible');
+  }
+
   function setRole(role) {
     currentRole = role;
     document.querySelectorAll('.toggle-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.role === role));
-    document.getElementById('serverField').style.display = role === 'owner' ? 'block' : 'none';
+    const showServer = role === 'owner';
+    document.getElementById('serverField').style.display = showServer ? 'block' : 'none';
+    document.getElementById('serverSizeField').style.display = showServer ? 'block' : 'none';
+    hideFormError();
   }
-  function submitForm() {
-    const email = document.getElementById('emailInput').value.trim();
+
+  async function submitForm() {
+    hideFormError();
+    const emailInput = document.getElementById('emailInput');
+    const email = emailInput.value.trim();
     if (!email || !email.includes('@')) {
-      document.getElementById('emailInput').style.borderColor = 'var(--red)';
-      setTimeout(() => { document.getElementById('emailInput').style.borderColor = ''; }, 1500);
+      emailInput.style.borderColor = 'var(--red)';
+      setTimeout(() => { emailInput.style.borderColor = ''; }, 1500);
       return;
     }
-    const data = {
-      email,
-      role: currentRole,
-      server_name: currentRole === 'owner' ? document.getElementById('serverInput').value.trim() : null,
-      submitted_at: new Date().toISOString()
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+
+    const serverName = currentRole === 'owner' ? document.getElementById('serverInput').value.trim() : null;
+    const serverSizeRaw = currentRole === 'owner' ? document.getElementById('serverSizeSelect').value : '';
+    const Server_Size = serverSizeRaw ? serverSizeRaw : null;
+
+    const payload = {
+      Email: email,
+      Role: currentRole,
+      Server_Name: serverName || null,
+      Server_Size,
+      created_at: new Date().toISOString()
     };
-    // TODO: Wire up backend (Supabase, Google Sheets, etc.)
-    console.log('Waitlist signup:', data);
-    document.getElementById('formArea').style.display = 'none';
-    document.getElementById('formSuccess').classList.add('visible');
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/Waitlist`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        document.getElementById('formArea').style.display = 'none';
+        document.getElementById('formSuccess').classList.add('visible');
+        return;
+      }
+
+      const raw = await res.text();
+      let detail = res.statusText || 'Request failed';
+      try {
+        const body = JSON.parse(raw);
+        if (body.message) detail = body.message;
+        else if (body.error) detail = typeof body.error === 'string' ? body.error : (body.error.message || detail);
+        else if (body.hint) detail = body.hint;
+      } catch (_) {
+        if (raw) detail = raw.slice(0, 200);
+      }
+      showFormError(`Something went wrong (${res.status}). ${detail}`);
+    } catch (err) {
+      showFormError('Network error. Check your connection and try again.');
+    } finally {
+      submitBtn.disabled = false;
+    }
   }
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && document.activeElement.classList.contains('form-input')) submitForm();
   });
